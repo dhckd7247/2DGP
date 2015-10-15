@@ -9,6 +9,8 @@ import title_state
 
 name = "MainState"
 
+Missile_List = []
+
 background1 = None
 player1 = None
 
@@ -33,35 +35,60 @@ class BackGround:
 
 
 class Player:
+    #LEFT_OVER, LEFT, STAND, RIGHT, RIGHT_OVER = 0, 1, 2, 3, 4
+
     def __init__(self):
         self.x, self.y = 400, 50
         self.image = load_image('player/player1_.png')
         self.frame = 6
-        self.missile = [load_image('missile/player_missile.png'), load_image('missile/player_missile2.png'),
-                       load_image('missile/player_missile3.png'), load_image('missile/player_missile4.png')]
-        self.missile_x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.missile_y = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
-        self.shoot_count = 0
+        self.key_down = False
+        self.left_move = 0
+        self.right_move = 0
+
+    def update(self):
+        if self.left_move == 1:
+            self.x -= 5
+            self.frame -= 1
+            if self.frame == 0 :
+                self.frame = 6
+
+
+        elif self.right_move == 1:
+            self.x += 5
+            self.frame += 1
+            if self.frame == 11 :
+                self.frame = 6
 
 
 
     def draw(self):
         self.image.clip_draw(self.frame*64, 0, 64, 72, self.x, self.y)
 
-    def shoot_update(self):
-        if(self.shoot_count == 1) :
-            self.missile_y[0] += 5
+    def missile_shoot(self):
+        newmissile = Missile(self.x, self.y)
+        Missile_List.append(newmissile)
 
-    def shoot(self):
-        for i in range(0, 10) :
-            self.missile[0].clip_draw(0, 0, 64, 96, self.missile_x[0], self.y + self.missile_y[0])
+
+class Missile:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.image = load_image('missile/player_missile.png')
+
+    def update(self) :
+        self.y += 5
+        if(self.y > 600) :
+            self.y = 0
+            del Missile_List[0]
+
+    def draw(self):
+            self.image.draw(self.x, self.y + 30)
 
 
 def enter():
-    global background1, player1
+    global background1, player1, Missile_List
     background1 = BackGround()
     player1 = Player()
-
+    Missile_List = []
 
 def exit():
     global background1, player1
@@ -78,7 +105,6 @@ def resume():
 
 
 def handle_events():
-    global player1
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
@@ -88,26 +114,32 @@ def handle_events():
                 game_framework.quit()
 
             elif event.key == SDLK_LEFT:
-                player1.x -= 10
-                player1.frame -= 1
-                if player1.frame == 0 :
-                    player1.frame = 6
+                player1.key_down = True
+                player1.left_move = 1
+                player1.right_move = 0
 
             elif event.key == SDLK_RIGHT:
-                player1.x += 10
-                player1.frame += 1
-                if player1.frame == 11 :
-                    player1.frame = 6
+                player1.key_down = True
+                player1.right_move = 1
+                player1.left_move = 0
 
             elif event.key == SDLK_SPACE:
-                player1.missile_x[0] = player1.x
-                player1.shoot_count = 1
+                player1.missile_shoot()
 
+        elif event.type == SDL_KEYUP:
+            if event.key == SDLK_LEFT:
+                player1.key_down = False
+            elif event.key == SDLK_RIGHT:
+                player1.key_down = False
 
 
 def update():
     background1.update()
-    player1.shoot_update()
+    if player1.key_down == True:
+        player1.update()
+
+    for member in Missile_List:
+        member.update()
 
 
 def draw():
@@ -115,8 +147,10 @@ def draw():
     clear_canvas()
     background1.draw()
     player1.draw()
-    if player1.shoot_count == 1 :
-        player1.shoot()
+
+    for member in Missile_List:
+        member.draw()
+
     update_canvas()
 
 

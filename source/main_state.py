@@ -127,6 +127,7 @@ def handle_events():
                 player1.missile_shoot()
 
         elif event.type == SDL_KEYUP:
+            player1.frame = 5
             if event.key == SDLK_LEFT:
                 player1.key_down = False
             elif event.key == SDLK_RIGHT:

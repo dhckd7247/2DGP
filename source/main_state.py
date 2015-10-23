@@ -10,9 +10,28 @@ import title_state
 name = "MainState"
 
 Missile_List = []
+Enemy_List = []
 
 background1 = None
 player1 = None
+
+class Timer:
+    def __init__(self):
+        self.time = 0
+        self.timer = 0
+        self.sec = 0
+        self.min = 0
+
+    def update(self):
+        self.time += 0.02
+        self.create_enemy()
+
+    def create_enemy(self):
+        if self.time >= 1:
+            new_enemy = Enemy()
+            Enemy_List.append(new_enemy)
+            self.time = 0
+
 
 
 class BackGround:
@@ -36,7 +55,6 @@ class BackGround:
 
 class Player:
     #LEFT_OVER, LEFT, STAND, RIGHT, RIGHT_OVER = 0, 1, 2, 3, 4
-
     def __init__(self):
         self.x, self.y = 400, 50
         self.image = load_image('player/player1_.png')
@@ -52,14 +70,11 @@ class Player:
             if self.frame == 0 :
                 self.frame = 6
 
-
         elif self.right_move == 1:
             self.x += 5
             self.frame += 1
             if self.frame == 11 :
                 self.frame = 6
-
-
 
     def draw(self):
         self.image.clip_draw(self.frame*64, 0, 64, 72, self.x, self.y)
@@ -83,15 +98,32 @@ class Missile:
     def draw(self):
             self.image.draw(self.x, self.y + 30)
 
+class Enemy:
+    def __init__(self):
+        self.x, self.y = random.randint(50, 750), 550
+        self.image = load_image('enemy/enemy_4.png')
+
+    def update(self):
+        self.y -= 0.5
+        if(self.y < 0):
+            self.y = 550
+            del Enemy_List[0]
+
+    def draw(self):
+        self.image.draw(self.x, self.y)
+
 
 def enter():
-    global background1, player1, Missile_List
+    global timer, background1, player1, Missile_List, Enemy_List
+    timer = Timer()
     background1 = BackGround()
     player1 = Player()
     Missile_List = []
+    Enemy_List = []
 
 def exit():
-    global background1, player1
+    global timer, background1, player1
+    del(timer)
     del(background1)
     del(player1)
 
@@ -126,6 +158,10 @@ def handle_events():
             elif event.key == SDLK_SPACE:
                 player1.missile_shoot()
 
+            elif event.key == SDLK_a:
+                newenemy = Enemy()
+                Enemy_List.append(newenemy)
+
         elif event.type == SDL_KEYUP:
             player1.frame = 5
             if event.key == SDLK_LEFT:
@@ -135,11 +171,15 @@ def handle_events():
 
 
 def update():
+    timer.update()
     background1.update()
     if player1.key_down == True:
         player1.update()
 
     for member in Missile_List:
+        member.update()
+
+    for member in Enemy_List:
         member.update()
 
 
@@ -150,6 +190,9 @@ def draw():
     player1.draw()
 
     for member in Missile_List:
+        member.draw()
+
+    for member in Enemy_List:
         member.draw()
 
     update_canvas()

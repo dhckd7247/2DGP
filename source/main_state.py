@@ -26,8 +26,10 @@ class Timer:
         self.sec = 0
         self.min = 0
 
-    def update(self):
-        self.time += 0.02
+    def update(self, frame_time):
+        #self.time += 0.02
+        self.time += frame_time
+        self.timer += frame_time
         self.create_enemy()
 
     def create_enemy(self):
@@ -38,18 +40,20 @@ class Timer:
 
 
 class BackGround:
+    MOVE_PER_SEC = 50
     def __init__(self):
         self.y1, self.y2 = 300, 900
         self.image1 = load_image('background/background_sky.png')
         self.image2 = load_image('background/background_space.png')
 
-    def update(self):
-        self.y1 -= 1
-        self.y2 -= 1
-        if(self.y1 == -299):
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+        self.y1 -= speed
+        self.y2 -= speed
+        if(self.y1 <= -299):
             self.y1 = 300
             self.y2 = 900
-        delay(0.01)
+        #delay(0.01)
 
     def draw(self):
         self.image1.clip_draw(0, 0, 800, 600, 400, self.y2)
@@ -57,6 +61,7 @@ class BackGround:
 
 
 class Player:
+    MOVE_PER_SEC = 400
     def __init__(self):
         self.x, self.y = 400, 50
         self.image = load_image('player/player1.png')
@@ -65,15 +70,16 @@ class Player:
         self.left_move = 0
         self.right_move = 0
 
-    def update(self):
+    def update(self, frame_time):
+        move_distance = frame_time * self.MOVE_PER_SEC
         if self.left_move == 1:
-            self.x = max(0, self.x - 5)
+            self.x = max(0, self.x - move_distance)
             self.frame -= 1
-            if self.frame == 0 :
+            if self.frame == 1 :
                 self.frame = 6
 
         elif self.right_move == 1:
-            self.x = min(800, self.x + 5)
+            self.x = min(800, self.x + move_distance)
             self.frame += 1
             if self.frame == 11 :
                 self.frame = 6
@@ -85,7 +91,7 @@ class Player:
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
-        return self.x -10, self.y + 10, self.x + 10, self.y - 36
+        return self.x -10, self.y + 25, self.x + 10, self.y - 36
 
     def missile_shoot(self):
         newmissile = Missile(self.x, self.y)
@@ -93,13 +99,15 @@ class Player:
 
 
 class Missile:
+    MOVE_PER_SEC = 600
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.image = load_image('missile/player_missile.png')
 
-    def update(self) :
+    def update(self, frame_time) :
+        move_distance = frame_time * self.MOVE_PER_SEC
         global newmissile
-        self.y += 8
+        self.y += move_distance
         if(self.y > 600) :
             self.y = 0
             del Missile_List[0]
@@ -111,24 +119,27 @@ class Missile:
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
-        return self.x - 32, self.y + 28, self.x + 32, self.y - 48
+        return self.x - 32, self.y + 30, self.x + 32, self.y - 18
 
 
 class Enemy:
+    MOVE_PER_SEC = 30
+    SHOT_PER_SEC = 1
     def __init__(self):
         self.x, self.y = random.randint(50, 750), 550
         self.missile_count = 0
         self.image = load_image('enemy/enemy_4.png')
 
-    def update(self):
-        self.y -= 0.5
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+        self.y -= speed
         if(self.y < 0):
             self.y = 550
             del Enemy_List[0]
-        self.missile_count += 0.02
-        if self.missile_count > 1 :
+        self.missile_count += frame_time * self.SHOT_PER_SEC
+        if self.missile_count > 0.8 :
             self.missile_count = 0
-            enemy_missile = Enemy_Missile(self.x, self.y)
+            enemy_missile = Enemy_Missile(self.x, self.y - 30)
             Enemy_Missile_List.append(enemy_missile)
 
     def draw(self):
@@ -142,14 +153,19 @@ class Enemy:
 
 
 class Enemy_Missile:
+    MOVE_PER_SEC = 600
+    FRAME_PER_SEC = 5
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.frame = 0
+        self.total_frames = 0
         self.image = load_image('missile/enemy_missile.png')
 
-    def update(self):
-        self.y -= 8
-        self.frame = (self.frame +1) % 2
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+        self.total_frames += frame_time * self.FRAME_PER_SEC
+        self.y -= speed
+        self.frame = int(self.total_frames) % 3
         if self.y < 0:
             return False
 
@@ -160,23 +176,25 @@ class Enemy_Missile:
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
-        return self.x - 8, self.y + 8, self.x + 8, self.y - 8
+        return self.x - 8, self.y + 8, self.x + 8, self.y - 3
 
 
 class Explosion:
+    FRAME_PER_SEC = 50
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.frame = 0
+        self.total_frames = 0
         self.image = load_image('bomb/effect_death.png')
 
-    def update(self):
-        self.frame = (self.frame + 1) % 15
+    def update(self, frame_time):
+        self.total_frames += frame_time * self.FRAME_PER_SEC
+        self.frame = int(self.total_frames) % 15
         if self.frame == 14:
             return False
 
     def draw(self):
         self.image.clip_draw(self.frame * 128, 0, 128, 128, self.x, self.y)
-
 
 
 def enter():
@@ -204,7 +222,7 @@ def resume():
     pass
 
 
-def handle_events():
+def handle_events(frame_time):
     events = get_events()
     for event in events:
         if event.type == SDL_QUIT:
@@ -233,6 +251,7 @@ def handle_events():
             elif event.key == SDLK_RIGHT:
                 player1.key_down = False
 
+
 def collision(a, b):
     a_left, a_bottom, a_right, a_top = a.get_bb()
     b_left, b_bottom, b_right, b_top = b.get_bb()
@@ -248,26 +267,26 @@ def collision(a, b):
     return True
 
 
-def update():
+def update(frame_time):
     global player1
-    timer.update()
-    background1.update()
+    timer.update(frame_time)
+    background1.update(frame_time)
     if player1.key_down == True:
-        player1.update()
+        player1.update(frame_time)
 
     for member in Missile_List:
-        member.update()
+        member.update(frame_time)
 
     for member in Enemy_List:
-        member.update()
+        member.update(frame_time)
 
     for member in Enemy_Missile_List:
-        check_frame = member.update()
+        check_frame = member.update(frame_time)
         if check_frame == False:
             Enemy_Missile_List.remove(member)
 
     for member in Enemy_Explosion:
-        check_frame = member.update()
+        check_frame = member.update(frame_time)
         if check_frame == False:
             Enemy_Explosion.remove(member)
 
@@ -286,23 +305,24 @@ def update():
             game_framework.push_state(lose_state)
 
 
-
-
-
-def draw():
-    handle_events()
+def draw(frame_time):
+    #handle_events()
     clear_canvas()
     background1.draw()
     player1.draw()
+    #player1.draw_bb()
 
     for member in Missile_List:
         member.draw()
+        #member.draw_bb()
 
     for member in Enemy_List:
         member.draw()
+        #member.draw_bb()
 
     for member in Enemy_Missile_List:
         member.draw()
+        #member.draw_bb()
 
     for member in Enemy_Explosion:
         member.draw()

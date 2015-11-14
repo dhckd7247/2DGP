@@ -1,5 +1,7 @@
 import game_framework
+import title_state
 import main_state
+import lose_state
 from pico2d import *
 
 name = "SelectState"
@@ -25,7 +27,7 @@ def exit():
     del(select_count)
 
 
-def handle_events():
+def handle_events(frame_time):
     global select_count
     events = get_events()
     for event in events:
@@ -41,7 +43,7 @@ def handle_events():
             elif(event.type, event.key) == (SDL_KEYDOWN, SDLK_LEFT):
                 select_count = 1
 
-def draw():
+def draw(frame_time):
     global select_count
     clear_canvas()
     image1.draw(200, 300)
@@ -50,7 +52,7 @@ def draw():
     update_canvas()
 
 
-def update():
+def update(frame_time):
     pass
 
 

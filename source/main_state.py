@@ -11,13 +11,15 @@ import lose_state
 name = "MainState"
 
 Missile_List = []
+Special_Missile_List = []
 Enemy_List = []
 Enemy_Missile_List = []
 Enemy_Explosion = []
 
+
 background1 = None
 player1 = None
-
+special_count = None
 
 class Timer:
     def __init__(self):
@@ -27,7 +29,6 @@ class Timer:
         self.min = 0
 
     def update(self, frame_time):
-        #self.time += 0.02
         self.time += frame_time
         self.timer += frame_time
         self.create_enemy()
@@ -53,7 +54,6 @@ class BackGround:
         if(self.y1 <= -299):
             self.y1 = 300
             self.y2 = 900
-        #delay(0.01)
 
     def draw(self):
         self.image1.clip_draw(0, 0, 800, 600, 400, self.y2)
@@ -69,6 +69,7 @@ class Player:
         self.key_down = False
         self.left_move = 0
         self.right_move = 0
+        self.special_count = 1
 
     def update(self, frame_time):
         move_distance = frame_time * self.MOVE_PER_SEC
@@ -97,6 +98,13 @@ class Player:
         newmissile = Missile(self.x, self.y)
         Missile_List.append(newmissile)
 
+    def special_missile_shoot(self):
+        if player1.special_count > 0 :
+            newspecialmissile = Special_Missile()
+            Special_Missile_List.append(newspecialmissile)
+            self.special_count -= 1
+            newspecialmissile.num -= 1
+
 
 class Missile:
     MOVE_PER_SEC = 600
@@ -113,13 +121,48 @@ class Missile:
             del Missile_List[0]
 
     def draw(self):
-            self.image.draw(self.x, self.y + 30)
+        self.image.draw(self.x, self.y + 30)
 
     def draw_bb(self):
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
         return self.x - 32, self.y + 30, self.x + 32, self.y - 18
+
+class Special_Missile:
+    MOVE_PER_SEC = 300
+    FRAME_PER_SEC = 5
+    def __init__(self):
+        self.x, self.y = 1, 0
+        self.i = 100
+        self.num = 1
+        self.count = 30
+        self.frame = 0
+        self.total_frames = 0
+        self.image = load_image('item/item_missile.png')
+
+    def update(self, frame_time):
+        move_distance = frame_time * self.MOVE_PER_SEC
+        self.total_frames += frame_time * self.FRAME_PER_SEC
+        global newspecialmissile
+        self.y += move_distance
+        self.frame = int(self.total_frames) % 17
+        if self.y > 600 :
+            self.y = 0
+            del Special_Missile_List[0]
+        if self.frame == 16:
+            self.frame = 16
+
+    def draw(self):
+        for i in range(17) :
+            self.image.clip_draw(self.frame * 31, 0, 30, 128, 50 * i, self.y )
+
+    def draw_count(self):
+        if self.num == 1:
+            self.image.clip_draw(0, 0, 31, 128, 700, 0)
+        #self.image.clip_draw(0, 0, 31, 128, 700 + self.count, 0)
+        #self.image.clip_draw(0, 0, 31, 128, 700 + self.count*2, 0)
+
 
 
 class Enemy:
@@ -197,21 +240,26 @@ class Explosion:
         self.image.clip_draw(self.frame * 128, 0, 128, 128, self.x, self.y)
 
 
+
+
 def enter():
-    global timer, background1, player1, Missile_List, Enemy_List, Enemy_Explosion, Enemy_Missile_List
+    global timer, background1, player1, special_count, Missile_List, Special_Missile_List, Enemy_List, Enemy_Explosion, Enemy_Missile_List
     timer = Timer()
     background1 = BackGround()
     player1 = Player()
+    special_count = Special_Missile()
     Missile_List = []
+    Special_Missile_List = []
     Enemy_List = []
     Enemy_Missile_List = []
     Enemy_Explosion = []
 
 def exit():
-    global timer, background1, player1
+    global timer, background1, player1, special_count
     del(timer)
     del(background1)
     del(player1)
+    del(special_count)
 
 
 def pause():
@@ -243,6 +291,9 @@ def handle_events(frame_time):
 
             elif event.key == SDLK_SPACE:
                 player1.missile_shoot()
+
+            elif event.key == SDLK_z:
+                player1.special_missile_shoot()
 
         elif event.type == SDL_KEYUP:
             player1.frame = 5
@@ -277,6 +328,15 @@ def update(frame_time):
     for member in Missile_List:
         member.update(frame_time)
 
+    for member in Special_Missile_List:
+        member.update(frame_time)
+        for enemy_plane in Enemy_List:
+            Enemy_List.remove(enemy_plane)
+            enemy_explosion = Explosion(enemy_plane.x, enemy_plane.y)
+            Enemy_Explosion.append(enemy_explosion)
+            for enemy_plane_missile in Enemy_Missile_List:
+                Enemy_Missile_List.remove(enemy_plane_missile)
+
     for member in Enemy_List:
         member.update(frame_time)
 
@@ -310,11 +370,16 @@ def draw(frame_time):
     clear_canvas()
     background1.draw()
     player1.draw()
+    if player1.special_count > 0 :
+        special_count.draw_count()
     #player1.draw_bb()
 
     for member in Missile_List:
         member.draw()
         #member.draw_bb()
+
+    for member in Special_Missile_List:
+        member.draw()
 
     for member in Enemy_List:
         member.draw()

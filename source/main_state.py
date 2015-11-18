@@ -15,33 +15,43 @@ Special_Missile_List = []
 Enemy_List = []
 Enemy_Missile_List = []
 Enemy_Explosion = []
-
+Middle_Boss_List = []
+Item_List = []
 
 background1 = None
 player1 = None
 special_count = None
 
+
 class Timer:
     def __init__(self):
-        self.time = 0
-        self.timer = 0
+        self.enemy_time = 0
+        self.middleboss_time = 0
         self.sec = 0
         self.min = 0
 
     def update(self, frame_time):
-        self.time += frame_time
-        self.timer += frame_time
+        self.enemy_time += frame_time
+        self.middleboss_time += frame_time
         self.create_enemy()
+        self.create_middle_boss()
 
     def create_enemy(self):
-        if self.time >= 0.7:
+        if self.enemy_time >= 0.7:
             new_enemy = Enemy()
             Enemy_List.append(new_enemy)
-            self.time = 0
+            self.enemy_time = 0
+
+    def create_middle_boss(self):
+        if self.middleboss_time >= 10.0:
+            new_middle_boss = Middle_Boss()
+            Middle_Boss_List.append(new_middle_boss)
+            self.middleboss_time = 0
 
 
 class BackGround:
     MOVE_PER_SEC = 50
+
     def __init__(self):
         self.y1, self.y2 = 300, 900
         self.image1 = load_image('background/background_sky.png')
@@ -51,7 +61,7 @@ class BackGround:
         speed = frame_time * self.MOVE_PER_SEC
         self.y1 -= speed
         self.y2 -= speed
-        if(self.y1 <= -299):
+        if self.y1 <= -299 :
             self.y1 = 300
             self.y2 = 900
 
@@ -62,6 +72,7 @@ class BackGround:
 
 class Player:
     MOVE_PER_SEC = 400
+
     def __init__(self):
         self.x, self.y = 400, 50
         self.image = load_image('player/player1.png')
@@ -101,13 +112,14 @@ class Player:
     def special_missile_shoot(self):
         if player1.special_count > 0 :
             newspecialmissile = Special_Missile()
+            newspecialmissile.num = self.special_count
             Special_Missile_List.append(newspecialmissile)
             self.special_count -= 1
-            newspecialmissile.num -= 1
 
 
 class Missile:
     MOVE_PER_SEC = 600
+
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.image = load_image('missile/player_missile.png')
@@ -116,7 +128,7 @@ class Missile:
         move_distance = frame_time * self.MOVE_PER_SEC
         global newmissile
         self.y += move_distance
-        if(self.y > 600) :
+        if self.y > 600 :
             self.y = 0
             del Missile_List[0]
 
@@ -129,9 +141,11 @@ class Missile:
     def get_bb(self):
         return self.x - 32, self.y + 30, self.x + 32, self.y - 18
 
+
 class Special_Missile:
     MOVE_PER_SEC = 300
     FRAME_PER_SEC = 5
+
     def __init__(self):
         self.x, self.y = 1, 0
         self.i = 100
@@ -158,16 +172,22 @@ class Special_Missile:
             self.image.clip_draw(self.frame * 31, 0, 30, 128, 50 * i, self.y )
 
     def draw_count(self):
-        if self.num == 1:
+        global player1
+        if player1.special_count == 1:
             self.image.clip_draw(0, 0, 31, 128, 700, 0)
-        #self.image.clip_draw(0, 0, 31, 128, 700 + self.count, 0)
-        #self.image.clip_draw(0, 0, 31, 128, 700 + self.count*2, 0)
-
+        elif player1.special_count == 2:
+            self.image.clip_draw(0, 0, 31, 128, 700, 0)
+            self.image.clip_draw(0, 0, 31, 128, 730, 0)
+        elif player1.special_count == 3:
+            self.image.clip_draw(0, 0, 31, 128, 700, 0)
+            self.image.clip_draw(0, 0, 31, 128, 730, 0)
+            self.image.clip_draw(0, 0, 31, 128, 760, 0)
 
 
 class Enemy:
     MOVE_PER_SEC = 30
     SHOT_PER_SEC = 1
+
     def __init__(self):
         self.x, self.y = random.randint(50, 750), 550
         self.missile_count = 0
@@ -195,9 +215,44 @@ class Enemy:
         return self.x - 37, self.y + 38, self.x + 37, self.y - 38
 
 
+class Middle_Boss:
+    MOVE_PER_SEC = 20
+    SHOT_PER_SEC = 0.5
+
+    def __init__(self):
+        self.x, self.y = random.randint(200, 500), 500
+        self.i = -40
+        self.image = load_image('boss/middleboss_1.png')
+        self.hp = 10
+        self.missile_count = 0
+
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+        self.y -= speed
+
+        self.missile_count += frame_time * self.SHOT_PER_SEC
+        if self.missile_count > 0.7 :
+            self.missile_count = 0
+            for i in range(5) :
+                enemy_missile = Enemy_Missile(self.x + self.i, self.y - 30)
+                Enemy_Missile_List.append(enemy_missile)
+                self.i += 20
+            self.i = -40
+
+    def draw(self):
+        self.image.draw(self.x, self.y)
+
+    def draw_bb(self):
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 115, self.y + 80, self.x + 115, self.y - 50
+
+
 class Enemy_Missile:
     MOVE_PER_SEC = 600
     FRAME_PER_SEC = 5
+
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.frame = 0
@@ -224,6 +279,7 @@ class Enemy_Missile:
 
 class Explosion:
     FRAME_PER_SEC = 50
+
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.frame = 0
@@ -240,10 +296,36 @@ class Explosion:
         self.image.clip_draw(self.frame * 128, 0, 128, 128, self.x, self.y)
 
 
+class Item:
+    FRAME_PER_SEC = 5
+    FRAME_PER_MOVE = 100
+
+    def __init__(self,x, y):
+        self.x, self.y = x, y
+        self.frame = 0
+        self.total_frames = 0
+        self.image = load_image('item/item.png')
+
+    def update(self, frame_time):
+        speed = frame_time * self.FRAME_PER_MOVE
+        self.total_frames += frame_time * self.FRAME_PER_SEC
+        self.frame = int(self.total_frames) % 3
+        self.y -= speed
+        if self.y < 0:
+            del Item_List[0]
+
+    def draw(self):
+        self.image.clip_draw(self.frame * 54, 0, 54, 32, self.x, self.y)
+
+    def draw_bb(self):
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 27, self.y + 16, self.x + 27, self.y - 16
 
 
 def enter():
-    global timer, background1, player1, special_count, Missile_List, Special_Missile_List, Enemy_List, Enemy_Explosion, Enemy_Missile_List
+    global timer, background1, player1, special_count, Missile_List, Special_Missile_List, Enemy_List, Enemy_Explosion, Enemy_Missile_List, Middle_Boss_List, Item_List
     timer = Timer()
     background1 = BackGround()
     player1 = Player()
@@ -253,6 +335,9 @@ def enter():
     Enemy_List = []
     Enemy_Missile_List = []
     Enemy_Explosion = []
+    Middle_Boss_List = []
+    Item_List = []
+
 
 def exit():
     global timer, background1, player1, special_count
@@ -350,6 +435,12 @@ def update(frame_time):
         if check_frame == False:
             Enemy_Explosion.remove(member)
 
+    for member in Middle_Boss_List:
+        member.update(frame_time)
+
+    for member in Item_List:
+        member.update(frame_time)
+
     #플레이어 미사일과 적 기체가 충돌한다면
     for player_missile in Missile_List:
         for enemy_plane in Enemy_List:
@@ -359,14 +450,33 @@ def update(frame_time):
                 enemy_explosion = Explosion(enemy_plane.x, enemy_plane.y)
                 Enemy_Explosion.append(enemy_explosion)
 
+    #플레이어 미사일과 적 중간보스가 충돌한다면
+    for player_missile in Missile_List:
+        for middle_boss in Middle_Boss_List:
+            if collision(player_missile, middle_boss):
+                Missile_List.remove(player_missile)
+                middleboss_explosion = Explosion(player_missile.x, player_missile.y)
+                Enemy_Explosion.append(middleboss_explosion)
+                middle_boss.hp -= 1
+                if middle_boss.hp == 0:
+                    Middle_Boss_List.remove(middle_boss)
+                    item = Item(middle_boss.x, middle_boss.y)
+                    Item_List.append(item)
+
+
     #적 기체의 미사일과 플레이어가 충돌한다면
     for enemy_plane_missile in Enemy_Missile_List:
         if collision(enemy_plane_missile, player1):
             game_framework.push_state(lose_state)
 
+    #아이템과 플레이어가 충돌한다면
+    for item in Item_List:
+        if collision(item, player1):
+            Item_List.remove(item)
+            player1.special_count += 1
+
 
 def draw(frame_time):
-    #handle_events()
     clear_canvas()
     background1.draw()
     player1.draw()
@@ -390,6 +500,12 @@ def draw(frame_time):
         #member.draw_bb()
 
     for member in Enemy_Explosion:
+        member.draw()
+
+    for member in Middle_Boss_List:
+        member.draw()
+
+    for member in Item_List:
         member.draw()
 
     update_canvas()

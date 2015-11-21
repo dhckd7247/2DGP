@@ -3,13 +3,13 @@ import title_state
 
 from pico2d import *
 
-name = "LoseState"
+name = "WinState"
 image = None
 
 
 def enter():
     global image
-    image = load_image('etc/lose.png')
+    image = load_image('etc/win.png')
 
 
 def exit():

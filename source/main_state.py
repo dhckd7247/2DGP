@@ -1,11 +1,13 @@
 import random
 import json
 import os
+import math
 
 from pico2d import *
 
 import game_framework
 import title_state
+import win_state
 import lose_state
 
 name = "MainState"
@@ -15,8 +17,12 @@ Special_Missile_List = []
 Enemy_List = []
 Enemy_Missile_List = []
 Enemy_Explosion = []
+Boss_Explosion = []
 Middle_Boss_List = []
 Item_List = []
+Boss_List = []
+Boss_Missile_List = []
+
 
 background1 = None
 player1 = None
@@ -27,14 +33,18 @@ class Timer:
     def __init__(self):
         self.enemy_time = 0
         self.middleboss_time = 0
+        self.middleboss_count = 0
+        self.boss_time = 0
         self.sec = 0
         self.min = 0
 
     def update(self, frame_time):
         self.enemy_time += frame_time
         self.middleboss_time += frame_time
+        self.boss_time += frame_time
         self.create_enemy()
         self.create_middle_boss()
+        self.create_boss()
 
     def create_enemy(self):
         if self.enemy_time >= 0.7:
@@ -43,10 +53,19 @@ class Timer:
             self.enemy_time = 0
 
     def create_middle_boss(self):
-        if self.middleboss_time >= 10.0:
+        if self.middleboss_time >= 13.0:
             new_middle_boss = Middle_Boss()
             Middle_Boss_List.append(new_middle_boss)
             self.middleboss_time = 0
+            self.middleboss_count += 1
+        if self.middleboss_count == 2:
+            self.middleboss_time = -1000
+
+    def create_boss(self):
+        if self.boss_time >= 40.0 :
+            new_boss = Boss()
+            Boss_List.append(new_boss)
+            self.boss_time = -1000
 
 
 class BackGround:
@@ -103,7 +122,7 @@ class Player:
         draw_rectangle(*self.get_bb())
 
     def get_bb(self):
-        return self.x -10, self.y + 25, self.x + 10, self.y - 36
+        return self.x -9, self.y + 25, self.x + 9, self.y - 36
 
     def missile_shoot(self):
         newmissile = Missile(self.x, self.y)
@@ -217,18 +236,30 @@ class Enemy:
 
 class Middle_Boss:
     MOVE_PER_SEC = 20
+    CROSS_PER_SEC = 80
     SHOT_PER_SEC = 0.5
 
     def __init__(self):
         self.x, self.y = random.randint(200, 500), 500
-        self.i = -40
+        self.i = -60
         self.image = load_image('boss/middleboss_1.png')
-        self.hp = 10
+        self.hp = 20
         self.missile_count = 0
+        self.count = 0
 
     def update(self, frame_time):
         speed = frame_time * self.MOVE_PER_SEC
         self.y -= speed
+        speed2 = frame_time * self.CROSS_PER_SEC
+
+        if self.count == 0 :
+            self.x += speed2
+            if self.x > 600 :
+                self.count = 1
+        elif self.count == 1:
+            self.x -= speed2
+            if self.x < 200 :
+                self.count = 0
 
         self.missile_count += frame_time * self.SHOT_PER_SEC
         if self.missile_count > 0.7 :
@@ -236,8 +267,8 @@ class Middle_Boss:
             for i in range(5) :
                 enemy_missile = Enemy_Missile(self.x + self.i, self.y - 30)
                 Enemy_Missile_List.append(enemy_missile)
-                self.i += 20
-            self.i = -40
+                self.i += 30
+            self.i = -60
 
     def draw(self):
         self.image.draw(self.x, self.y)
@@ -247,6 +278,47 @@ class Middle_Boss:
 
     def get_bb(self):
         return self.x - 115, self.y + 80, self.x + 115, self.y - 50
+
+
+class Boss:
+    SHOT_PER_SEC = 1
+    MOVE_PER_SEC = 100
+
+    def __init__(self):
+        self.x, self.y = 400, 500
+        self.image = load_image('boss/boss_1.png')
+        self.count = 0
+        self.i = 0
+        self.hp = 50
+        self.missile_count = 0
+        self.DEGINRAD = 3.141592 / 180
+
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+
+        if self.count == 0:
+            self.x += speed
+            if self.x > 500:
+                self.count = 1
+        elif self.count == 1:
+            self.x -= speed
+            if self.x < 100:
+                self.count = 0
+        self.missile_count += frame_time * self.SHOT_PER_SEC
+        if self.missile_count > 1 :
+            self.missile_count = 0
+            for i in range(15) :
+                boss_missile = Boss_Missile(400 * math.cos(-i * 12 * self.DEGINRAD) + self.x, 400 * math.sin(-i * 12 * self.DEGINRAD) + self.y + 400)
+                Boss_Missile_List.append(boss_missile)
+
+    def draw(self):
+        self.image.draw(self.x, self.y)
+
+    def draw_bb(self):
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 220, self.y + 120, self.x + 220, self.y - 20
 
 
 class Enemy_Missile:
@@ -277,7 +349,49 @@ class Enemy_Missile:
         return self.x - 8, self.y + 8, self.x + 8, self.y - 3
 
 
+class Boss_Missile:
+    MOVE_PER_SEC = 500
+
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.image = load_image('missile/boss_missile.png')
+
+    def update(self, frame_time):
+        speed = frame_time * self.MOVE_PER_SEC
+        self.y -= speed
+        if self.y < 0:
+            return False
+
+    def draw(self):
+        self.image.draw(self.x, self.y)
+
+    def draw_bb(self):
+        draw_rectangle(*self.get_bb())
+
+    def get_bb(self):
+        return self.x - 8, self.y - 8, self.x + 8, self.y + 8
+
+
 class Explosion:
+    FRAME_PER_SEC = 30
+
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.frame = 0
+        self.total_frames = 0
+        self.image = load_image('bomb/effect_boss.png')
+
+    def update(self, frame_time):
+        self.total_frames += frame_time * self.FRAME_PER_SEC
+        self.frame = int(self.total_frames) % 12
+        if self.frame == 11:
+            return False
+
+    def draw(self):
+        self.image.clip_draw(self.frame * 65, 0, 65, 65, self.x, self.y)
+
+
+class Boss_Bomb:
     FRAME_PER_SEC = 50
 
     def __init__(self, x, y):
@@ -325,7 +439,7 @@ class Item:
 
 
 def enter():
-    global timer, background1, player1, special_count, Missile_List, Special_Missile_List, Enemy_List, Enemy_Explosion, Enemy_Missile_List, Middle_Boss_List, Item_List
+    global timer, background1, player1, special_count, Missile_List, Special_Missile_List, Enemy_List, Enemy_Explosion, Boss_Explosion, Enemy_Missile_List, Middle_Boss_List, Item_List, Boss_List, Boss_Missile_List
     timer = Timer()
     background1 = BackGround()
     player1 = Player()
@@ -335,8 +449,11 @@ def enter():
     Enemy_List = []
     Enemy_Missile_List = []
     Enemy_Explosion = []
+    Boss_Explosion = []
     Middle_Boss_List = []
     Item_List = []
+    Boss_List = []
+    Boss_Missile_List = []
 
 
 def exit():
@@ -435,8 +552,21 @@ def update(frame_time):
         if check_frame == False:
             Enemy_Explosion.remove(member)
 
+    for member in Boss_Explosion:
+        check_frame = member.update(frame_time)
+        if check_frame == False:
+            Boss_Explosion.remove(member)
+
     for member in Middle_Boss_List:
         member.update(frame_time)
+
+    for member in Boss_List:
+        member.update(frame_time)
+
+    for member in Boss_Missile_List:
+        check_frame = member.update(frame_time)
+        if check_frame == False:
+            Boss_Missile_List.remove(member)
 
     for member in Item_List:
         member.update(frame_time)
@@ -455,18 +585,34 @@ def update(frame_time):
         for middle_boss in Middle_Boss_List:
             if collision(player_missile, middle_boss):
                 Missile_List.remove(player_missile)
-                middleboss_explosion = Explosion(player_missile.x, player_missile.y)
-                Enemy_Explosion.append(middleboss_explosion)
+                middleboss_explosion = Boss_Bomb(player_missile.x, player_missile.y)
+                Boss_Explosion.append(middleboss_explosion)
                 middle_boss.hp -= 1
                 if middle_boss.hp == 0:
                     Middle_Boss_List.remove(middle_boss)
                     item = Item(middle_boss.x, middle_boss.y)
                     Item_List.append(item)
 
+    #플레이어 미사일과 적 보스가 충돌한다면
+    for player_missile in Missile_List:
+        for boss in Boss_List:
+            if collision(player_missile, boss):
+                Missile_List.remove(player_missile)
+                boss_explosion = Boss_Bomb(player_missile.x, player_missile.y)
+                Boss_Explosion.append(boss_explosion)
+                boss.hp -= 1
+                if boss.hp == 0:
+                    Boss_List.remove(boss)
+                    game_framework.push_state(win_state)
 
     #적 기체의 미사일과 플레이어가 충돌한다면
     for enemy_plane_missile in Enemy_Missile_List:
         if collision(enemy_plane_missile, player1):
+            game_framework.push_state(lose_state)
+
+    #적 보스의 미사일과 플레이어가 충돌한다면
+    for boss_missile in Boss_Missile_List:
+        if collision(boss_missile, player1):
             game_framework.push_state(lose_state)
 
     #아이템과 플레이어가 충돌한다면
@@ -505,7 +651,18 @@ def draw(frame_time):
     for member in Middle_Boss_List:
         member.draw()
 
+    for member in Boss_List:
+        member.draw()
+        #member.draw_bb()
+
+    for member in Boss_Missile_List:
+        member.draw()
+        #member.draw_bb()
+
     for member in Item_List:
+        member.draw()
+
+    for member in Boss_Explosion:
         member.draw()
 
     update_canvas()

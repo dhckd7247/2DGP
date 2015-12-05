@@ -5,18 +5,21 @@ from pico2d import *
 
 name = "TitleState"
 image = None
-
+bgm = None
 
 def enter():
-    global image
+    global image, bgm
     open_canvas()
     image = load_image('etc/main.png')
-
+    bgm = load_music('music/main.ogg')
+    bgm.set_volume(64)
+    bgm.repeat_play()
 
 def exit():
-    global image
+    global image, bgm
     del(image)
     close_canvas()
+    bgm.stop()
 
 
 def handle_events(frame_time):

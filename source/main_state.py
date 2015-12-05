@@ -78,6 +78,9 @@ class BackGround:
         self.y1, self.y2 = 300, 900
         self.image1 = load_image('background/background_sky.png')
         self.image2 = load_image('background/background_space.png')
+        self.bgm = load_music('music/background.ogg')
+        self.bgm.set_volume(64)
+        self.bgm.repeat_play()
 
     def update(self, frame_time):
         speed = frame_time * self.MOVE_PER_SEC
@@ -103,6 +106,8 @@ class Player:
         self.left_move = 0
         self.right_move = 0
         self.special_count = 1
+        self.bgm = load_wav('music/item.wav')
+        self.bgm.set_volume(64)
 
     def update(self, frame_time):
         move_distance = frame_time * self.MOVE_PER_SEC
@@ -133,6 +138,7 @@ class Player:
 
     def special_missile_shoot(self):
         if player1.special_count > 0 :
+            self.bgm.play(1)
             newspecialmissile = Special_Missile()
             newspecialmissile.num = self.special_count
             Special_Missile_List.append(newspecialmissile)
@@ -150,6 +156,9 @@ class Player2:
         self.left_move = 0
         self.right_move = 0
         self.special_count = 1
+        self.bgm = load_wav('music/item.wav')
+        self.bgm.set_volume(64)
+
 
     def update(self, frame_time):
         move_distance = frame_time * self.MOVE_PER_SEC
@@ -180,6 +189,7 @@ class Player2:
 
     def special_missile_shoot(self):
         if player1.special_count > 0 :
+            self.bgm.play(1)
             newspecialmissile = Special_Missile()
             newspecialmissile.num = self.special_count
             Special_Missile_List.append(newspecialmissile)

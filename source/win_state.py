@@ -5,11 +5,14 @@ from pico2d import *
 
 name = "WinState"
 image = None
-
+bgm = None
 
 def enter():
-    global image
+    global image, bgm
     image = load_image('etc/win.png')
+    bgm = load_music('music/win.ogg')
+    bgm.set_volume(128)
+    bgm.play(1)
 
 
 def exit():

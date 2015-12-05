@@ -5,17 +5,20 @@ from pico2d import *
 
 name = "LoseState"
 image = None
+bgm = None
 
 
 def enter():
-    global image
+    global image, bgm
     image = load_image('etc/lose.png')
+    bgm = load_music('music/lose.ogg')
+    bgm.set_volume(64)
+    bgm.play(1)
 
 
 def exit():
     global image
     del(image)
-
 
 
 def handle_events(frame_time):

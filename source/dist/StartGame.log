@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "1945game.py", line 12, in <module>
+  File "C:\2DGP\1945\game_framework.py", line 98, in run
+    stack[-1].exit()
+  File "C:\2DGP\1945\main_state.py", line 568, in exit
+    del(timer)
+NameError: name 'timer' is not defined
+Traceback (most recent call last):
+  File "1945game.py", line 12, in <module>
+  File "C:\2DGP\1945\game_framework.py", line 98, in run
+    stack[-1].exit()
+  File "C:\2DGP\1945\main_state.py", line 568, in exit
+    del(timer)
+NameError: name 'timer' is not defined

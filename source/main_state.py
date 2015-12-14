@@ -565,7 +565,7 @@ def enter():
 
 def exit():
     global timer, background1, player1, special_count
-    del(timer)
+    #del(timer)
     del(background1)
     del(player1)
     del(special_count)
@@ -592,11 +592,17 @@ def handle_events(frame_time):
                 player1.key_down = True
                 player1.left_move = 1
                 player1.right_move = 0
+                if event.key == SDLK_RIGHT:
+                    player1.left_move = 0
+                    player1.right_move = 1
 
             elif event.key == SDLK_RIGHT:
                 player1.key_down = True
                 player1.right_move = 1
                 player1.left_move = 0
+                if event.key == SDLK_LEFT:
+                    player1.left_move = 1
+                    player1.right_move = 0
 
             elif event.key == SDLK_SPACE:
                 player1.missile_shoot()
